@@ -1,3 +1,3 @@
 # GreenPath
-npm install /n
+npm install \n
 npm start
