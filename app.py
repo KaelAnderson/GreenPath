@@ -13,58 +13,76 @@ def load_data():
     return df
 
 # Streamlit app layout
-st.title('Display Route on Google Maps')
-
-# Create two columns layout
-col1, col2 = st.columns([2, 1])
-
-# Input for start and end locations
-with col1:
-    start_loc = st.text_input("Enter starting location (e.g., 'New York'):")
-    end_loc = st.text_input("Enter destination location (e.g., 'Los Angeles'):")
-
-# Button to generate route
-with col1:
-    if st.button("Show Route"):
-        # Get directions from Google Maps API
-        directions = gmaps.directions(start_loc, end_loc)
-
-        # Extract polyline from directions
-        if directions:
-            steps = directions[0]['legs'][0]['steps']
-            polyline_points = []
-            for step in steps:
-                polyline_points.extend(polyline.decode(step['polyline']['points']))
-
-            # Extract latitudes and longitudes from polyline points
-            lats = [point[0] for point in polyline_points]
-            lons = [point[1] for point in polyline_points]
-
-            # Display map with route
-            st.map({'lat': lats, 'lon': lons,}, color='#75cf70')
-        else:
-            st.error("No route found. Please check your locations.")
+st.title('Display Eco-friendly Route')
             
-# You can use col2 for additional content, such as info or settings if needed
-with col2:
-    # Load the data
-    df = load_data()
+col1, col2, col3 = st.columns(3)
 
-    # Unique makes
-    makes = df['make'].unique()
+# Load the data
+df = load_data()
 
+# Unique makes
+makes = df['make'].unique()
+
+with col1:
     # Dropdown for selecting make
     selected_make = st.selectbox("Select Make:", makes)
 
-    # Filter data based on selected make
-    filtered_data = df[df['make'] == selected_make]
+# Filter data based on selected make
+filtered_data = df[df['make'] == selected_make]
 
-    # Unique models for the selected make
-    models = filtered_data['model'].unique()
+# Unique models for the selected make
+models = filtered_data['model'].unique()
 
+with col2:
     # Dropdown for selecting model
     selected_model = st.selectbox("Select Model:", models)
 
-    st.write("You have selected:")
-    selected_data = filtered_data[filtered_data['model'] == selected_model]
-    st.write(selected_data)
+filtered_data = filtered_data[filtered_data['model'] == selected_model]
+
+# Unique years for the selected make and model
+years = filtered_data['year'].unique()
+
+with col3:
+    selected_year = st.selectbox("Select Year:", years)
+
+filtered_data = filtered_data[filtered_data['year'] == selected_year]
+
+#gets the value of the selected make model and year
+if not filtered_data.empty:
+    comb08_value = filtered_data['comb08'].values[0]
+else:
+    st.write("No data available for the selected make, model, and year.")
+
+col4, col5 = st.columns(2)
+
+with col4:
+    isCarpool = st.selectbox('How are you riding?', ('Solo', 'Carpool'))
+
+with col5:
+    numPeople = st.number_input("How many people are in the car?", value=1, min_value=1)
+    # might want to put a max value on that. definitely would want to based on make and model but that's not really smth we can do rn
+
+
+# Input for start and end locations
+start_loc = st.text_input("Enter starting location (e.g., 'New York'):")
+end_loc = st.text_input("Enter destination location (e.g., 'Los Angeles'):")
+
+if st.button("Show Route"):
+        # Get directions from Google Maps API
+    directions = gmaps.directions(start_loc, end_loc)
+
+        # Extract polyline from directions
+    if directions:
+        steps = directions[0]['legs'][0]['steps']
+        polyline_points = []
+        for step in steps:
+            polyline_points.extend(polyline.decode(step['polyline']['points']))
+
+        # Extract latitudes and longitudes from polyline points
+        lats = [point[0] for point in polyline_points]
+        lons = [point[1] for point in polyline_points]
+
+        # Display map with route
+        st.map({'lat': lats, 'lon': lons,}, color='#75cf70')
+    else:
+        st.error("No route found. Please check your locations.")
