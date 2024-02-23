@@ -1,3 +1,2 @@
 # GreenPath
-npm install
-npm start
+py -m streamlit run app.py
