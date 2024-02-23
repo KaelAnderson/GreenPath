@@ -3,53 +3,42 @@ import axios from 'axios'; // assuming we'll use it (?)
 import './App.css';
 import './index.css';
 
-
 function App() {
 
+  let map;
 
-return (
-  <div className="App">
-    <h1>hello greepath nation</h1>
-  </div>
-  );
+async function initMap() {
+  // The location of Uluru
+  const position = { lat: -25.344, lng: 131.031 };
+  // Request needed libraries.
+  //@ts-ignore
+  const { Map } = await google.maps.importLibrary("maps");
+  const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
 
-  const params = {
-    origin: {
-      location: {
-        latLng: {
-          latitude: -37.8167,
-          longitude: 144.9619
-        }
-      }
-    },
-    destination: {
-      location: {
-        latLng: {
-          latitude: -37.8155,
-          longitude: 144.9663
-        }
-      }
-    },
-    routingPreference: "TRAFFIC_AWARE",
-    travelMode: "DRIVE"
-  };
-  
-  const apiKey = "YOUR_API_KEY";
-  
-  const requestOptions = {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": apiKey,
-      "X-Goog-FieldMask": "routes.route_token,routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline"
-    },
-    body: JSON.stringify(params)
-  };
-  
-  fetch("https://routes.googleapis.com/directions/v2:computeRoutes", requestOptions)
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.log("Error:", error));
+  // The map, centered at Uluru
+  map = new Map(document.getElementById("map"), {
+    zoom: 4,
+    center: position,
+    mapId: "DEMO_MAP_ID",
+  });
+
+  // The marker, positioned at Uluru
+  const marker = new AdvancedMarkerElement({
+    map: map,
+    position: position,
+    title: "Uluru",
+  });
 }
+
+initMap();
+
+  return (
+    <div className="App">
+    <h1>hello greepath nation</h1>
+    </div>
+  );
+}
+
+
 
 export default App;
