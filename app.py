@@ -10,7 +10,7 @@ def load_data():
     return df
 
 # Function to make the Google Maps API request
-def get_eco_friendly_route(start, end, emission_type):
+def get_eco_friendly_route(start, end):
     url = "https://routes.googleapis.com/directions/v2:computeRoutes"
     api_key = "AIzaSyAIG8FuU1bPLh6Z6f9HGAxmDFFevepjpLo"
     # params = {
@@ -52,7 +52,7 @@ def decode_polyline(polyline_str):
 
 # Streamlit app
 def main():
-    st.title("Greenpath")
+    conty = st.container()
 
 # Streamlit app layout
 st.title('GreenPath')
@@ -108,16 +108,13 @@ with col5:
 # Input for start and end locations
 start = st.text_input("Enter starting point:")
 end = st.text_input("Enter destination point:")
-emission_type = st.selectbox(
-    "Select vehicle emission type:",
-    ["DIESEL", "GASOLINE", "ELECTRIC", "HYBRID"],
-)
 
 if st.button("Get Eco-Friendly Route"):
     if start and end:
         try:
-            route_data = get_eco_friendly_route(start, end, emission_type)
+            route_data = get_eco_friendly_route(start, end)
             routes = route_data["routes"]
+            count = 0
             for route in routes:
                 # path = route["overview_polyline"]["points"]
                 path = route["polyline"]["encodedPolyline"]
@@ -128,16 +125,18 @@ if st.button("Get Eco-Friendly Route"):
                 miles = float(meters)/1609.344
                 coordinates = decode_polyline(path)
                 comb07_value = miles/gallonusage
-                seconds = route["duration"]
+                count = count + 1
+                
                 # Convert coordinates to list of dictionaries
                 coords_list = [{"lat": coord[0], "lon": coord[1]} for coord in coordinates]
                     
                 # Display route on map
-                st.map(coords_list)
-                st.title("Usage: " + str(gallonusage) + "g")
-                st.title("Distance: " + str(miles) + " mi.")
-                st.title("True Usage: " + str((gallonusage/(1/comb07_value))*(1/comb08_value)))
-                st.title("Duration: " + str(seconds) + "ec")
+                if count % 2 == 0:
+                    st.map(coords_list, color='#75cf70')
+                else:
+                    st.map(coords_list)
+                container = st.container()
+                container.write("True Usage: " + str((gallonusage/(1/comb07_value))*(1/comb08_value)))
         except Exception as e:
             st.error("An error occurred: {}".format(e))
     else:
