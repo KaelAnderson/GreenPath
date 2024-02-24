@@ -115,6 +115,7 @@ if st.button("Get Eco-Friendly Route"):
         try:
             route_data = get_eco_friendly_route(start, end)
             routes = route_data["routes"]
+            numRoutes = len(routes)
             count = 0
             for route in routes:
                 # path = route["overview_polyline"]["points"]
@@ -130,24 +131,31 @@ if st.button("Get Eco-Friendly Route"):
                 miles = float(meters)/1609.344
                 coordinates = decode_polyline(path)
                 comb07_value = miles/gallonusage
-                count = count + 1
 
                 trueUsage = (gallonusage/(1/comb07_value))*(1/comb08_value)
+
                 if (isCarpool):
-                    trueUsage/numPeople
+                    trueUsage = trueUsage/numPeople
                 
                 # Convert coordinates to list of dictionaries
                 coords_list = [{"lat": coord[0], "lon": coord[1]} for coord in coordinates]
                     
-                # Display route on map
-                if count % 2 == 0:
+                # Display route on map, make eco-friendly route paths green
+                if numRoutes == 1:
                     st.map(coords_list, color='#75cf70')
-                else:
-                    st.map(coords_list)
+                elif numRoutes == 2 and count == 0:
+                    st.map(coords_list, color='#F70000')
+                elif numRoutes == 2 and count == 1:
+                    st.map(coords_list, color='#75cf70')
+
+                count = count + 1
                 container = st.container()
 
-                container.write("True Fuel Usage: " + str((gallonusage/(1/comb07_value))*(1/comb08_value)))
                 container.write("Trip Duration: " + str(minutes) + " min, " + str(remainSeconds) + " sec")
+                #container.write("True Fuel Usage: " + str((gallonusage/(1/comb07_value))*(1/comb08_value)))
+                container.write("True Fuel Usage: " + str(trueUsage))
+                container.write("CO2 emissions produced (tons): " + str(trueUsage * 0.00889))
+                
 
         except Exception as e:
             st.error("An error occurred: {}".format(e))
