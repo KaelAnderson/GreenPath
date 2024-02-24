@@ -131,9 +131,11 @@ if st.button("Get Eco-Friendly Route"):
                 coordinates = decode_polyline(path)
                 comb07_value = miles/gallonusage
                 count = count + 1
+
                 trueUsage = (gallonusage/(1/comb07_value))*(1/comb08_value)
                 if (isCarpool):
                     trueUsage/numPeople
+                
                 # Convert coordinates to list of dictionaries
                 coords_list = [{"lat": coord[0], "lon": coord[1]} for coord in coordinates]
                     
@@ -143,8 +145,10 @@ if st.button("Get Eco-Friendly Route"):
                 else:
                     st.map(coords_list)
                 container = st.container()
+
                 container.write("True Fuel Usage: " + str((gallonusage/(1/comb07_value))*(1/comb08_value)))
                 container.write("Trip Duration: " + str(minutes) + " min, " + str(remainSeconds) + " sec")
+
         except Exception as e:
             st.error("An error occurred: {}".format(e))
     else:
