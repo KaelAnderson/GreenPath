@@ -1,58 +1,80 @@
 import streamlit as st
-try:
-    import googlemaps
-except ImportError:
-    st.warning("Installing required package... Please wait!")
-    import subprocess
-    subprocess.run(["pip", "install", "googlemaps"])
-    import googlemaps
-
-from datetime import datetime
+import requests
 import polyline
-import pandas as pd
+import json
+# Function to make the Google Maps API request
+def get_eco_friendly_route(start, end, emission_type):
+    url = "https://routes.googleapis.com/directions/v2:computeRoutes"
+    api_key = "AIzaSyAIG8FuU1bPLh6Z6f9HGAxmDFFevepjpLo"
+    # params = {
+    #     "origin": start,
+    #     "destination": end,
+    #     "emissionType": emission_type,
+    #     "requestedReferenceRoutes": ["FUEL_EFFICIENT"],
+    #     "routingPreference": "TRAFFIC_AWARE_OPTIMAL",
+    #     "key": "AIzaSyAIG8FuU1bPLh6Z6f9HGAxmDFFevepjpLo"
+    # }
+    payload = {
+        "origin": {"address": start},
+        "destination": {"address": end},
+        "routeModifiers": {
+            "vehicleInfo": {
+                "emissionType": "GASOLINE"
+            }
+        },
+        "travelMode": "DRIVE",
+        "routingPreference": "TRAFFIC_AWARE_OPTIMAL",
+        "extraComputations": ["FUEL_CONSUMPTION"],
+        "requestedReferenceRoutes": ["FUEL_EFFICIENT"]
+    }
+    # Headers
+    headers = {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': api_key,
+        'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration,routes.routeLabels,routes.polyline,routes.travelAdvisory.fuelConsumptionMicroliters'
+    }
+    # response = requests.post(url, params=params)
+    response = requests.post(url, headers=headers, json=payload)
+    data = response.json()
+    print(f"data:{data}")
+    return data
 
-# Google Maps API Key (replace with your own key)
-API_KEY = "AIzaSyAIG8FuU1bPLh6Z6f9HGAxmDFFevepjpLo"
+# Function to decode polyline string into list of coordinates
+def decode_polyline(polyline_str):
+    return polyline.decode(polyline_str)
 
-# Create a Google Maps client
-gmaps = googlemaps.Client(key=API_KEY)
-
-# Streamlit App
+# Streamlit app
 def main():
-    st.title("Google Maps Route Drawing App")
-    
-    # Input boxes for origin and destination
-    origin = st.text_input("Enter Origin (e.g., 'New York City'):")
-    destination = st.text_input("Enter Destination (e.g., 'Los Angeles'):")
-    
-    # Button to draw the route
-    if st.button("Draw Route"):
-        if not origin or not destination:
-            st.warning("Please enter both origin and destination.")
+    st.title("Eco-Friendly Route Planner")
+
+    start = st.text_input("Enter starting point:")
+    end = st.text_input("Enter destination point:")
+    emission_type = st.selectbox(
+        "Select vehicle emission type:",
+        ["DIESEL", "GASOLINE", "ELECTRIC", "HYBRID"],
+    )
+
+    if st.button("Get Eco-Friendly Route"):
+        if start and end:
+            try:
+                route_data = get_eco_friendly_route(start, end, emission_type)
+                routes = route_data["routes"]
+                for route in routes:
+                    # path = route["overview_polyline"]["points"]
+                    path = route["polyline"]["encodedPolyline"]
+                    literusage = route["travelAdvisory"]["fuelConsumptionMicroliters"]
+                    coordinates = decode_polyline(path)
+                    
+                    # Convert coordinates to list of dictionaries
+                    coords_list = [{"lat": coord[0], "lon": coord[1]} for coord in coordinates]
+                    
+                    # Display route on map
+                    st.map(coords_list)
+                    st.title("Usage: " + literusage + "µL")
+            except Exception as e:
+                st.error("An error occurred: {}".format(e))
         else:
-            # Get directions
-            directions_result = gmaps.directions(origin, destination, mode="driving")
-            
-            if len(directions_result) == 0:
-                st.warning("No route found. Please check your inputs.")
-            else:
-                for i, route in enumerate(directions_result):
-                    st.subheader(f"Route {i+1}")
-                    # Extract route coordinates
-                    overview_polyline = route['overview_polyline']['points']
-                    decoded_route = polyline.decode(overview_polyline)
-                    # Create DataFrame with 'latitude' and 'longitude' columns
-                    df = pd.DataFrame(decoded_route, columns=['latitude', 'longitude'])
-                    # Display map with route
-                    st.map(df)
-                    # Optional: Print route duration and distance
-                    duration = route['legs'][0]['duration']['text']
-                    distance = route['legs'][0]['distance']['text']
-                    st.write(f"**Duration:** {duration}, **Distance:** {distance}")
-                    st.markdown("---")
-                
-    st.markdown("---")
-    st.markdown("Created with ❤️ by Your Name")
+            st.warning("Please enter a starting point and destination.")
 
 if __name__ == "__main__":
     main()
