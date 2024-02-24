@@ -13,7 +13,7 @@ def load_data():
     return df
 
 # Streamlit app layout
-st.title('Display Eco-friendly Route')
+st.title('GreenPath')
             
 col1, col2, col3 = st.columns(3)
 
