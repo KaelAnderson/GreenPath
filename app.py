@@ -56,6 +56,7 @@ def main():
     conty = st.container()
 
 # Streamlit app layout
+st.image('greenpath.png')
 st.title('GreenPath')
             
 col1, col2, col3 = st.columns(3)
