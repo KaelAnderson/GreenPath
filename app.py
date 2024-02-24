@@ -13,15 +13,8 @@ def load_data():
 # Function to make the Google Maps API request
 def get_eco_friendly_route(start, end):
     url = "https://routes.googleapis.com/directions/v2:computeRoutes"
-    api_key = "AIzaSyAIG8FuU1bPLh6Z6f9HGAxmDFFevepjpLo"
-    # params = {
-    #     "origin": start,
-    #     "destination": end,
-    #     "emissionType": emission_type,
-    #     "requestedReferenceRoutes": ["FUEL_EFFICIENT"],
-    #     "routingPreference": "TRAFFIC_AWARE_OPTIMAL",
-    #     "key": "AIzaSyAIG8FuU1bPLh6Z6f9HGAxmDFFevepjpLo"
-    # }
+    api_key = "YOUR_API_KEY"
+    
     payload = {
         "origin": {"address": start},
         "destination": {"address": end},
