@@ -1,70 +1,80 @@
 import streamlit as st
-import googlemaps
+import requests
 import polyline
-import pandas as pd
+import json
+# Function to make the Google Maps API request
+def get_eco_friendly_route(start, end, emission_type):
+    url = "https://routes.googleapis.com/directions/v2:computeRoutes"
+    api_key = "AIzaSyAIG8FuU1bPLh6Z6f9HGAxmDFFevepjpLo"
+    # params = {
+    #     "origin": start,
+    #     "destination": end,
+    #     "emissionType": emission_type,
+    #     "requestedReferenceRoutes": ["FUEL_EFFICIENT"],
+    #     "routingPreference": "TRAFFIC_AWARE_OPTIMAL",
+    #     "key": "AIzaSyAIG8FuU1bPLh6Z6f9HGAxmDFFevepjpLo"
+    # }
+    payload = {
+        "origin": {"address": start},
+        "destination": {"address": end},
+        "routeModifiers": {
+            "vehicleInfo": {
+                "emissionType": "GASOLINE"
+            }
+        },
+        "travelMode": "DRIVE",
+        "routingPreference": "TRAFFIC_AWARE_OPTIMAL",
+        "extraComputations": ["FUEL_CONSUMPTION"],
+        "requestedReferenceRoutes": ["FUEL_EFFICIENT"]
+    }
+    # Headers
+    headers = {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': api_key,
+        'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration,routes.routeLabels,routes.polyline,routes.travelAdvisory.fuelConsumptionMicroliters'
+    }
+    # response = requests.post(url, params=params)
+    response = requests.post(url, headers=headers, json=payload)
+    data = response.json()
+    print(f"data:{data}")
+    return data
 
-# Set up Google Maps API client
-gmaps = googlemaps.Client(key='AIzaSyAIG8FuU1bPLh6Z6f9HGAxmDFFevepjpLo')  # Replace 'YOUR_API_KEY' with your actual API key
+# Function to decode polyline string into list of coordinates
+def decode_polyline(polyline_str):
+    return polyline.decode(polyline_str)
 
-# Function to load Vehicle Database
-@st.cache_data
-def load_data():
-    df = pd.read_csv('VEHICLES5.csv')
-    return df
+# Streamlit app
+def main():
+    st.title("Eco-Friendly Route Planner")
 
-# Streamlit app layout
-st.title('Display Route on Google Maps')
+    start = st.text_input("Enter starting point:")
+    end = st.text_input("Enter destination point:")
+    emission_type = st.selectbox(
+        "Select vehicle emission type:",
+        ["DIESEL", "GASOLINE", "ELECTRIC", "HYBRID"],
+    )
 
-# Create two columns layout
-col1, col2 = st.columns([2, 1])
-
-# Input for start and end locations
-with col1:
-    start_loc = st.text_input("Enter starting location (e.g., 'New York'):")
-    end_loc = st.text_input("Enter destination location (e.g., 'Los Angeles'):")
-
-# Button to generate route
-with col1:
-    if st.button("Show Route"):
-        # Get directions from Google Maps API
-        directions = gmaps.directions(start_loc, end_loc)
-
-        # Extract polyline from directions
-        if directions:
-            steps = directions[0]['legs'][0]['steps']
-            polyline_points = []
-            for step in steps:
-                polyline_points.extend(polyline.decode(step['polyline']['points']))
-
-            # Extract latitudes and longitudes from polyline points
-            lats = [point[0] for point in polyline_points]
-            lons = [point[1] for point in polyline_points]
-
-            # Display map with route
-            st.map({'lat': lats, 'lon': lons,}, color='#75cf70')
+    if st.button("Get Eco-Friendly Route"):
+        if start and end:
+            try:
+                route_data = get_eco_friendly_route(start, end, emission_type)
+                routes = route_data["routes"]
+                for route in routes:
+                    # path = route["overview_polyline"]["points"]
+                    path = route["polyline"]["encodedPolyline"]
+                    literusage = route["travelAdvisory"]["fuelConsumptionMicroliters"]
+                    coordinates = decode_polyline(path)
+                    
+                    # Convert coordinates to list of dictionaries
+                    coords_list = [{"lat": coord[0], "lon": coord[1]} for coord in coordinates]
+                    
+                    # Display route on map
+                    st.map(coords_list)
+                    st.title("Usage: " + literusage + "µL")
+            except Exception as e:
+                st.error("An error occurred: {}".format(e))
         else:
-            st.error("No route found. Please check your locations.")
-            
-# You can use col2 for additional content, such as info or settings if needed
-with col2:
-    # Load the data
-    df = load_data()
+            st.warning("Please enter a starting point and destination.")
 
-    # Unique makes
-    makes = df['make'].unique()
-
-    # Dropdown for selecting make
-    selected_make = st.selectbox("Select Make:", makes)
-
-    # Filter data based on selected make
-    filtered_data = df[df['make'] == selected_make]
-
-    # Unique models for the selected make
-    models = filtered_data['model'].unique()
-
-    # Dropdown for selecting model
-    selected_model = st.selectbox("Select Model:", models)
-
-    st.write("You have selected:")
-    selected_data = filtered_data[filtered_data['model'] == selected_model]
-    st.write(selected_data)
+if __name__ == "__main__":
+    main()
