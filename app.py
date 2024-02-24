@@ -128,7 +128,7 @@ if st.button("Get Eco-Friendly Route"):
                 miles = float(meters)/1609.344
                 coordinates = decode_polyline(path)
                 comb07_value = miles/gallonusage
-                
+                seconds = route["duration"]
                 # Convert coordinates to list of dictionaries
                 coords_list = [{"lat": coord[0], "lon": coord[1]} for coord in coordinates]
                     
@@ -137,6 +137,7 @@ if st.button("Get Eco-Friendly Route"):
                 st.title("Usage: " + str(gallonusage) + "g")
                 st.title("Distance: " + str(miles) + " mi.")
                 st.title("True Usage: " + str((gallonusage/(1/comb07_value))*(1/comb08_value)))
+                st.title("Duration: " + str(seconds) + "ec")
         except Exception as e:
             st.error("An error occurred: {}".format(e))
     else:
